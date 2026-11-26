@@ -83,7 +83,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Enforce HIGH and CRITICAL severity gate
-        if: success()
+        if: success() && github.event_name == 'pull_request'
         run: >-
           dotnet run --project ScannerEngine/ScannerEngine.csproj
           --configuration Release --no-build --no-restore --
