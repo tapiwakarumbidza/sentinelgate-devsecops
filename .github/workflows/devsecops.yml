@@ -22,27 +22,32 @@ jobs:
       - name: Build solution
         run: dotnet build SentinelGate.sln --configuration Release
 
-      - name: Set up Go for Gitleaks
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.23.x
-
-      - name: Install Gitleaks
+      - name: Install Gitleaks CLI
         run: |
-          go install github.com/gitleaks/gitleaks/v8@v8.24.2
-          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+          version=8.30.1
+          archive="gitleaks_${version}_linux_x64.tar.gz"
+          release_url="https://github.com/gitleaks/gitleaks/releases/download/v${version}"
+          curl --fail --location --silent --show-error "$release_url/$archive" \
+            --output "$RUNNER_TEMP/$archive"
+          curl --fail --location --silent --show-error "$release_url/gitleaks_${version}_checksums.txt" \
+            --output "$RUNNER_TEMP/gitleaks_checksums.txt"
+          cd "$RUNNER_TEMP"
+          grep "  ${archive}$" gitleaks_checksums.txt | sha256sum --check -
+          tar -xzf "$archive" gitleaks
+          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
 
       - name: Scan repository secrets
-        run: gitleaks git --report-format json --report-path gitleaks.json --exit-code 0
+        run: gitleaks git --redact --report-format json --report-path gitleaks.json --exit-code 0
 
       - name: Install Semgrep
         run: |
           sudo apt-get update
           sudo apt-get install -y pipx
           pipx install semgrep
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Scan C# source with Semgrep
-        run: semgrep scan --config p/csharp --json --output semgrep.json .
+        run: semgrep scan --config p/csharp --json --output semgrep.json --no-error .
 
       - name: Build API container
         run: docker build --tag sentinelgate-target-api:ci ./TargetApi
@@ -57,14 +62,13 @@ jobs:
           severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
           exit-code: "0"
 
-      - name: Generate unified report and enforce severity gate
+      - name: Generate unified security report
         run: >-
           dotnet run --project ScannerEngine/ScannerEngine.csproj --configuration Release --
           --semgrep semgrep.json
           --gitleaks gitleaks.json
           --trivy trivy.json
           --output Dashboard/security-report.json
-          --fail-on HIGH,CRITICAL
 
       - name: Upload scanner and unified JSON reports
         if: always()
@@ -77,3 +81,14 @@ jobs:
             trivy.json
             Dashboard/security-report.json
           if-no-files-found: warn
+
+      - name: Enforce HIGH and CRITICAL severity gate
+        if: success()
+        run: >-
+          dotnet run --project ScannerEngine/ScannerEngine.csproj
+          --configuration Release --no-build --no-restore --
+          --semgrep semgrep.json
+          --gitleaks gitleaks.json
+          --trivy trivy.json
+          --output Dashboard/security-report.json
+          --fail-on HIGH,CRITICAL
