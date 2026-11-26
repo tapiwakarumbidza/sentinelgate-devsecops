@@ -1,0 +1,9 @@
+[
+  {
+    "RuleID": "generic-api-key",
+    "Description": "Possible hard-coded demo payment API key (placeholder only)",
+    "File": "TargetApi/appsettings.json",
+    "StartLine": 9,
+    "Secret": "[REDACTED - sample fixture contains no credential]"
+  }
+]

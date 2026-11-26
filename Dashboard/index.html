@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SentinelGate | Security posture</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { background: #080d18; color: #e5e7eb; }
+    .panel { background: #101827; border: 1px solid #233047; }
+    .muted { color: #94a3b8; }
+  </style>
+</head>
+<body class="min-h-screen">
+  <main class="mx-auto max-w-7xl px-5 py-10">
+    <header class="mb-9 flex flex-wrap items-end justify-between gap-4">
+      <div>
+        <p class="mb-2 text-sm font-semibold uppercase tracking-[.25em] text-cyan-400">SentinelGate</p>
+        <h1 class="text-3xl font-bold text-white">Security &amp; compliance posture</h1>
+        <p id="generated" class="muted mt-2 text-sm">Loading latest report...</p>
+      </div>
+      <div class="flex flex-wrap items-center gap-3">
+        <span id="popia-status" class="rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-300">POPIA status: loading</span>
+        <span class="rounded-full border border-cyan-900 bg-cyan-950/50 px-4 py-2 text-sm text-cyan-300">Local demo report</span>
+      </div>
+    </header>
+
+    <p id="error" class="mb-6 hidden rounded-lg border border-rose-900 bg-rose-950/40 p-4 text-rose-200"></p>
+
+    <section aria-label="Severity counts" class="mb-8 grid grid-cols-2 gap-4 md:grid-cols-5">
+      <div class="panel rounded-xl p-5"><p class="muted text-sm">Critical</p><p id="critical" class="mt-2 text-3xl font-bold text-rose-400">—</p></div>
+      <div class="panel rounded-xl p-5"><p class="muted text-sm">High</p><p id="high" class="mt-2 text-3xl font-bold text-orange-300">—</p></div>
+      <div class="panel rounded-xl p-5"><p class="muted text-sm">Medium</p><p id="medium" class="mt-2 text-3xl font-bold text-amber-200">—</p></div>
+      <div class="panel rounded-xl p-5"><p class="muted text-sm">Low</p><p id="low" class="mt-2 text-3xl font-bold text-sky-300">—</p></div>
+      <div class="panel rounded-xl p-5"><p class="muted text-sm">Total findings</p><p id="total" class="mt-2 text-3xl font-bold text-white">—</p></div>
+    </section>
+
+    <section class="mb-8 grid gap-6 lg:grid-cols-2">
+      <article class="panel rounded-xl p-6">
+        <h2 class="mb-5 text-lg font-semibold text-white">Findings by severity</h2>
+        <div class="mx-auto max-w-sm"><canvas id="severity-chart" aria-label="Severity chart"></canvas></div>
+      </article>
+      <article class="panel rounded-xl p-6">
+        <h2 class="mb-5 text-lg font-semibold text-white">POPIA control status</h2>
+        <div id="popia-controls" class="space-y-3"></div>
+      </article>
+    </section>
+
+    <section class="panel rounded-xl p-6">
+      <h2 class="mb-5 text-lg font-semibold text-white">OWASP Top 10 (2021)</h2>
+      <div class="relative h-[26rem]"><canvas id="owasp-chart" aria-label="OWASP Top 10 findings chart"></canvas></div>
+    </section>
+
+    <section class="panel mt-8 rounded-xl p-6">
+      <div class="mb-5 flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-semibold text-white">Vulnerability findings</h2>
+          <p class="muted mt-1 text-sm">Search scanner, severity, rule, file, OWASP, and POPIA mappings.</p>
+        </div>
+        <label class="sr-only" for="finding-search">Search vulnerability findings</label>
+        <input id="finding-search" type="search" placeholder="Search findings..."
+          class="w-full rounded-lg border border-slate-700 bg-slate-950 px-4 py-2 text-sm text-white placeholder-slate-500 outline-none focus:border-cyan-500 sm:max-w-sm">
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[850px] text-left text-sm">
+          <thead class="border-b border-slate-700 text-xs uppercase tracking-wide text-slate-400">
+            <tr>
+              <th class="px-3 py-3">Severity</th><th class="px-3 py-3">Finding</th>
+              <th class="px-3 py-3">Scanner</th><th class="px-3 py-3">Location</th>
+              <th class="px-3 py-3">OWASP</th><th class="px-3 py-3">POPIA controls</th>
+            </tr>
+          </thead>
+          <tbody id="findings-table" class="divide-y divide-slate-800"></tbody>
+        </table>
+      </div>
+    </section>
+    <footer class="muted mt-8 text-xs">Training demo only. Sample findings are synthetic; this dashboard is not a compliance determination or assessment of a production system.</footer>
+  </main>
+  <script>
+    const showError = (message) => {
+      const error = document.getElementById("error");
+      error.textContent = message;
+      error.classList.remove("hidden");
+    };
+
+    fetch("./security-report.json")
+      .then((response) => {
+        if (!response.ok) throw new Error(`Could not load report (HTTP ${response.status}).`);
+        return response.json();
+      })
+      .then((report) => {
+        const counts = report.severityCounts || {};
+        for (const severity of ["critical", "high", "medium", "low"]) {
+          document.getElementById(severity).textContent = counts[severity] ?? 0;
+        }
+        document.getElementById("total").textContent = report.totalFindings ?? 0;
+        document.getElementById("generated").textContent =
+          `Report generated ${new Date(report.generatedAt).toLocaleString()} · schema ${report.schemaVersion}`;
+
+        const controls = document.getElementById("popia-controls");
+        for (const control of report.popiaControls || []) {
+          const row = document.createElement("div");
+          row.className = "flex flex-wrap items-center justify-between gap-2 rounded-lg bg-slate-900/70 p-4";
+          const name = document.createElement("span");
+          name.textContent = control.name;
+          const status = document.createElement("span");
+          status.textContent = `${control.status.replaceAll("_", " ")} · ${control.findingCount} finding(s)`;
+          status.className = control.status === "attention_required"
+            ? "text-amber-300"
+            : control.status === "not_assessed" ? "text-slate-400" : "text-emerald-300";
+          row.append(name, status);
+          controls.append(row);
+        }
+
+        const popiaStatus = document.getElementById("popia-status");
+        const reviewRequired = (report.popiaControls || [])
+          .some((control) => control.status === "attention_required");
+        popiaStatus.textContent = reviewRequired
+          ? "POPIA status: review required"
+          : "POPIA status: not assessed";
+        popiaStatus.className = reviewRequired
+          ? "rounded-full border border-amber-800 bg-amber-950/50 px-4 py-2 text-sm text-amber-200"
+          : "rounded-full border border-slate-700 bg-slate-900 px-4 py-2 text-sm text-slate-300";
+
+        new Chart(document.getElementById("severity-chart"), {
+          type: "doughnut",
+          data: {
+            labels: ["Critical", "High", "Medium", "Low", "Info"],
+            datasets: [{ data: [counts.critical, counts.high, counts.medium, counts.low, counts.info],
+              backgroundColor: ["#fb7185", "#fdba74", "#fde68a", "#7dd3fc", "#a5b4fc"], borderWidth: 0 }]
+          },
+          options: { plugins: { legend: { labels: { color: "#cbd5e1" } } } }
+        });
+
+        const categories = Array.isArray(report.owaspTop10) ? report.owaspTop10 : [];
+        new Chart(document.getElementById("owasp-chart"), {
+          type: "bar",
+          data: {
+            labels: categories.map((category) => `${category.id} · ${category.name}`),
+            datasets: [{ label: "Findings", data: categories.map((category) => category.count),
+              backgroundColor: "#22d3ee", borderRadius: 5 }]
+          },
+          options: {
+            indexAxis: "y",
+            maintainAspectRatio: false,
+            scales: {
+              x: { beginAtZero: true, ticks: { precision: 0, color: "#94a3b8" }, grid: { color: "#233047" } },
+              y: { ticks: { color: "#cbd5e1" }, grid: { display: false } }
+            },
+            plugins: { legend: { display: false } }
+          }
+        });
+
+        const findings = Array.isArray(report.findings) ? report.findings : [];
+        const tableBody = document.getElementById("findings-table");
+        const searchInput = document.getElementById("finding-search");
+        const severityClasses = {
+          CRITICAL: "bg-rose-950 text-rose-200",
+          HIGH: "bg-orange-950 text-orange-200",
+          MEDIUM: "bg-amber-950 text-amber-200",
+          LOW: "bg-sky-950 text-sky-200",
+          INFO: "bg-indigo-950 text-indigo-200"
+        };
+        const renderFindings = () => {
+          const query = searchInput.value.trim().toLowerCase();
+          const visibleFindings = findings.filter((finding) =>
+            [finding.severity, finding.title, finding.ruleId, finding.scanner, finding.file,
+              finding.owaspCategory, ...(finding.popiaControls || [])]
+              .join(" ").toLowerCase().includes(query));
+          tableBody.replaceChildren();
+          if (visibleFindings.length === 0) {
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+            cell.colSpan = 6;
+            cell.className = "muted px-3 py-6 text-center";
+            cell.textContent = findings.length === 0 ? "No findings in this report." : "No matching findings.";
+            row.append(cell);
+            tableBody.append(row);
+            return;
+          }
+
+          for (const finding of visibleFindings) {
+            const row = document.createElement("tr");
+            const severity = document.createElement("td");
+            const badge = document.createElement("span");
+            badge.className = `inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${severityClasses[finding.severity] || severityClasses.INFO}`;
+            badge.textContent = finding.severity || "INFO";
+            severity.className = "px-3 py-3";
+            severity.append(badge);
+
+            const title = document.createElement("td");
+            title.className = "max-w-sm px-3 py-3 font-medium text-slate-100";
+            title.textContent = finding.title || finding.ruleId || "Untitled finding";
+
+            const scanner = document.createElement("td");
+            scanner.className = "px-3 py-3 text-slate-300";
+            scanner.textContent = finding.scanner || "Unknown";
+
+            const location = document.createElement("td");
+            location.className = "px-3 py-3 font-mono text-xs text-slate-300";
+            location.textContent = finding.line ? `${finding.file}:${finding.line}` : (finding.file || "—");
+
+            const owasp = document.createElement("td");
+            owasp.className = "px-3 py-3 text-slate-300";
+            const category = categories.find((item) => item.id === finding.owaspCategory);
+            owasp.textContent = category ? `${category.id} · ${category.name}` : (finding.owaspCategory || "—");
+
+            const popia = document.createElement("td");
+            popia.className = "px-3 py-3 text-slate-300";
+            popia.textContent = (finding.popiaControls || []).join(", ") || "—";
+            row.append(severity, title, scanner, location, owasp, popia);
+            tableBody.append(row);
+          }
+        };
+        searchInput.addEventListener("input", renderFindings);
+        renderFindings();
+      })
+      .catch((error) => showError(`${error.message} Run ScannerEngine to generate security-report.json.`));
+  </script>
+</body>
+</html>

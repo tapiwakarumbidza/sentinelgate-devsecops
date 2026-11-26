@@ -1,0 +1,79 @@
+name: SentinelGate DevSecOps
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Build solution
+        run: dotnet build SentinelGate.sln --configuration Release
+
+      - name: Set up Go for Gitleaks
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.23.x
+
+      - name: Install Gitleaks
+        run: |
+          go install github.com/gitleaks/gitleaks/v8@v8.24.2
+          echo "$(go env GOPATH)/bin" >> "$GITHUB_PATH"
+
+      - name: Scan repository secrets
+        run: gitleaks git --report-format json --report-path gitleaks.json --exit-code 0
+
+      - name: Install Semgrep
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pipx
+          pipx install semgrep
+
+      - name: Scan C# source with Semgrep
+        run: semgrep scan --config p/csharp --json --output semgrep.json .
+
+      - name: Build API container
+        run: docker build --tag sentinelgate-target-api:ci ./TargetApi
+
+      - name: Scan API container with Trivy
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          scan-type: image
+          image-ref: sentinelgate-target-api:ci
+          format: json
+          output: trivy.json
+          severity: UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL
+          exit-code: "0"
+
+      - name: Generate unified report and enforce severity gate
+        run: >-
+          dotnet run --project ScannerEngine/ScannerEngine.csproj --configuration Release --
+          --semgrep semgrep.json
+          --gitleaks gitleaks.json
+          --trivy trivy.json
+          --output Dashboard/security-report.json
+          --fail-on HIGH,CRITICAL
+
+      - name: Upload scanner and unified JSON reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-reports
+          path: |
+            gitleaks.json
+            semgrep.json
+            trivy.json
+            Dashboard/security-report.json
+          if-no-files-found: warn

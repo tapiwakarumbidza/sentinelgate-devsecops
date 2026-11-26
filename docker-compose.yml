@@ -1,0 +1,15 @@
+services:
+  target-api:
+    build:
+      context: ./TargetApi
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+  dashboard:
+    build:
+      context: ./Dashboard
+    ports:
+      - "8081:80"
+    volumes:
+      - ./Dashboard/security-report.json:/usr/share/nginx/html/security-report.json:ro

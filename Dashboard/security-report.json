@@ -1,0 +1,152 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-11-26T22:00:57.5677568+00:00",
+  "totalFindings": 5,
+  "severityCounts": {
+    "critical": 1,
+    "high": 2,
+    "medium": 1,
+    "low": 1,
+    "info": 0
+  },
+  "findings": [
+    {
+      "scanner": "Semgrep",
+      "ruleId": "csharp.lang.security.audit.sqli",
+      "title": "Synthetic fixture: interpolated query construction can create SQL injection risk if executed.",
+      "severity": "HIGH",
+      "description": "Synthetic fixture: interpolated query construction can create SQL injection risk if executed.",
+      "file": "fixtures/semgrep-training.cs.txt",
+      "line": 12,
+      "owaspCategory": "A03",
+      "popiaControls": [
+        "POPIA-19"
+      ]
+    },
+    {
+      "scanner": "Semgrep",
+      "ruleId": "csharp.web.privacy.unmasked-pii",
+      "title": "Synthetic fixture: unmasked personal identifiers in an API response require review.",
+      "severity": "MEDIUM",
+      "description": "Synthetic fixture: unmasked personal identifiers in an API response require review.",
+      "file": "TargetApi/Program.cs",
+      "line": 16,
+      "owaspCategory": "A05",
+      "popiaControls": [
+        "POPIA-19",
+        "POPIA-23"
+      ]
+    },
+    {
+      "scanner": "Gitleaks",
+      "ruleId": "generic-api-key",
+      "title": "Possible hard-coded demo payment API key (placeholder only)",
+      "severity": "HIGH",
+      "description": "Possible hard-coded demo payment API key (placeholder only)",
+      "file": "TargetApi/appsettings.json",
+      "line": 9,
+      "owaspCategory": "A07",
+      "popiaControls": [
+        "POPIA-19"
+      ]
+    },
+    {
+      "scanner": "Trivy",
+      "ruleId": "CVE-2099-0001",
+      "title": "Synthetic fixture vulnerability for parser demonstration",
+      "severity": "CRITICAL",
+      "description": "Synthetic fixture vulnerability for parser demonstration",
+      "file": "sample-library",
+      "line": null,
+      "owaspCategory": "A06",
+      "popiaControls": [
+        "POPIA-19"
+      ]
+    },
+    {
+      "scanner": "Trivy",
+      "ruleId": "CVE-2099-0002",
+      "title": "Synthetic low-severity fixture for parser demonstration",
+      "severity": "LOW",
+      "description": "Synthetic low-severity fixture for parser demonstration",
+      "file": "sample-helper",
+      "line": null,
+      "owaspCategory": "A06",
+      "popiaControls": [
+        "POPIA-19"
+      ]
+    }
+  ],
+  "owaspTop10": [
+    {
+      "id": "A01",
+      "name": "Broken Access Control",
+      "count": 0
+    },
+    {
+      "id": "A02",
+      "name": "Cryptographic Failures",
+      "count": 0
+    },
+    {
+      "id": "A03",
+      "name": "Injection",
+      "count": 1
+    },
+    {
+      "id": "A04",
+      "name": "Insecure Design",
+      "count": 0
+    },
+    {
+      "id": "A05",
+      "name": "Security Misconfiguration",
+      "count": 1
+    },
+    {
+      "id": "A06",
+      "name": "Vulnerable and Outdated Components",
+      "count": 2
+    },
+    {
+      "id": "A07",
+      "name": "Identification and Authentication Failures",
+      "count": 1
+    },
+    {
+      "id": "A08",
+      "name": "Software and Data Integrity Failures",
+      "count": 0
+    },
+    {
+      "id": "A09",
+      "name": "Security Logging and Monitoring Failures",
+      "count": 0
+    },
+    {
+      "id": "A10",
+      "name": "Server-Side Request Forgery",
+      "count": 0
+    }
+  ],
+  "popiaControls": [
+    {
+      "id": "POPIA-19",
+      "name": "Section 19: Security safeguards",
+      "status": "attention_required",
+      "findingCount": 5
+    },
+    {
+      "id": "POPIA-22",
+      "name": "Section 22: Security compromise notification",
+      "status": "not_assessed",
+      "findingCount": 0
+    },
+    {
+      "id": "POPIA-23",
+      "name": "Section 23: Access to personal information",
+      "status": "attention_required",
+      "findingCount": 1
+    }
+  ]
+}

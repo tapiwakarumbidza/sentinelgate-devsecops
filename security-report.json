@@ -1,0 +1,125 @@
+{
+  "schemaVersion": "1.0",
+  "generatedAt": "2026-11-26T21:49:29.2293571+00:00",
+  "totalFindings": 3,
+  "severityCounts": {
+    "critical": 1,
+    "high": 2,
+    "medium": 0,
+    "low": 0,
+    "info": 0
+  },
+  "findings": [
+    {
+      "scanner": "Semgrep",
+      "ruleId": "csharp.lang.security.audit.sqli",
+      "title": "Potential SQL injection: user-controlled input is interpolated into a query.",
+      "severity": "HIGH",
+      "description": "Potential SQL injection: user-controlled input is interpolated into a query.",
+      "file": "TargetApi/Program.cs",
+      "line": 36,
+      "owaspCategory": "A03",
+      "popiaControls": [
+        "POPIA-19"
+      ]
+    },
+    {
+      "scanner": "Gitleaks",
+      "ruleId": "generic-api-key",
+      "title": "Possible hard-coded demo API key",
+      "severity": "HIGH",
+      "description": "Possible hard-coded demo API key",
+      "file": "TargetApi/appsettings.json",
+      "line": 9,
+      "owaspCategory": "A07",
+      "popiaControls": [
+        "POPIA-19"
+      ]
+    },
+    {
+      "scanner": "Trivy",
+      "ruleId": "CVE-2099-0001",
+      "title": "Synthetic fixture vulnerability for parser demonstration",
+      "severity": "CRITICAL",
+      "description": "Synthetic fixture vulnerability for parser demonstration",
+      "file": "sample-library",
+      "line": null,
+      "owaspCategory": "A06",
+      "popiaControls": [
+        "POPIA-19"
+      ]
+    }
+  ],
+  "owaspTop10": [
+    {
+      "id": "A01",
+      "name": "Broken Access Control",
+      "count": 0
+    },
+    {
+      "id": "A02",
+      "name": "Cryptographic Failures",
+      "count": 0
+    },
+    {
+      "id": "A03",
+      "name": "Injection",
+      "count": 1
+    },
+    {
+      "id": "A04",
+      "name": "Insecure Design",
+      "count": 0
+    },
+    {
+      "id": "A05",
+      "name": "Security Misconfiguration",
+      "count": 0
+    },
+    {
+      "id": "A06",
+      "name": "Vulnerable and Outdated Components",
+      "count": 1
+    },
+    {
+      "id": "A07",
+      "name": "Identification and Authentication Failures",
+      "count": 1
+    },
+    {
+      "id": "A08",
+      "name": "Software and Data Integrity Failures",
+      "count": 0
+    },
+    {
+      "id": "A09",
+      "name": "Security Logging and Monitoring Failures",
+      "count": 0
+    },
+    {
+      "id": "A10",
+      "name": "Server-Side Request Forgery",
+      "count": 0
+    }
+  ],
+  "popiaControls": [
+    {
+      "id": "POPIA-19",
+      "name": "Section 19: Security safeguards",
+      "status": "attention_required",
+      "findingCount": 3
+    },
+    {
+      "id": "POPIA-22",
+      "name": "Section 22: Security compromise notification",
+      "status": "not_assessed",
+      "findingCount": 0
+    },
+    {
+      "id": "POPIA-23",
+      "name": "Section 23: Access to personal information",
+      "status": "not_assessed",
+      "findingCount": 0
+    }
+  ]
+}

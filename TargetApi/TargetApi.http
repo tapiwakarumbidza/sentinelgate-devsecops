@@ -1,0 +1,22 @@
+@baseUrl = http://localhost:8080
+
+### List users (synthetic demo identifiers)
+GET {{baseUrl}}/api/users
+
+### List transactions
+GET {{baseUrl}}/api/transactions
+
+### Find a transaction
+GET {{baseUrl}}/api/transactions/txn-1001
+
+### Missing transaction
+GET {{baseUrl}}/api/transactions/not-found
+
+### Mock login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "demo-user",
+  "password": "demo-password"
+}
